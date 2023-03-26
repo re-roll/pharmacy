@@ -68,8 +68,6 @@ CREATE TABLE Pojistovna (
   ulice VARCHAR(255),
   mesto VARCHAR(255),
   PSC INTEGER
-  --Check if ICO is exactly 8 numbers
-  CONSTRAINT CHECK_ICO_LN CHECK (LENGTH(TO_CHAR(ICO)) = 8)
 );
 
 CREATE SEQUENCE seq_Prispevek_ID START WITH 1 INCREMENT BY 1;
@@ -102,6 +100,8 @@ ALTER TABLE LekNaPredpis ADD CONSTRAINT PK_LekNaPredpis PRIMARY KEY (Lek_Nazev);
 ALTER TABLE LekNaPredpis ADD CONSTRAINT FK_LekNaPredpis_Lek_Nazev FOREIGN KEY (Lek_Nazev) REFERENCES Lek;
 
 ALTER TABLE Pojistovna ADD CONSTRAINT PK_Pojistovna PRIMARY KEY (ICO);
+--Check if ICO is exactly 8 numbers
+ALTER TABLE Pojistovna ADD CONSTRAINT CHECK_ICO_SYMB CHECK (REGEXP_LIKE(ICO, '^[0-9]{8}$'));
 
 ALTER TABLE Prispevek ADD CONSTRAINT PK_Prispevek PRIMARY KEY (ID);
 ALTER TABLE Prispevek ADD CONSTRAINT FK_Prispevek_Pojistovna_ICO FOREIGN KEY (Pojistovna_ICO) REFERENCES Pojistovna;
