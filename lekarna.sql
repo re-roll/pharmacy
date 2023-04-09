@@ -22,8 +22,8 @@ DROP SEQUENCE seq_Vydani_ID;
 DROP SEQUENCE seq_Vykaz_ID;
 
 --Drop Trigger
-DROP TRIGGER rand_Nazev_Trigger
-DROP TRIGGER rand_Lek_Nazev_Trigger
+DROP TRIGGER rand_Nazev_Trigger;
+DROP TRIGGER rand_Lek_Nazev_Trigger;
 
 --Generalization -> one table for higher-level entity and one for its subtype
 CREATE TABLE Lek (
