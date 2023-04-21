@@ -54,8 +54,8 @@ CREATE OR REPLACE TRIGGER rand_Lek_Nazev_Trigger
   BEFORE INSERT ON LekNaPredpis
   FOR EACH ROW
 BEGIN
-  IF :NEW.Nazev IS NULL THEN 
-    :NEW.Nazev := DBMS_RANDOM.STRING('X', 10);
+  IF :NEW.Lek_Nazev IS NULL THEN 
+    :NEW.Lek_Nazev := DBMS_RANDOM.STRING('X', 10);
   END IF;
 END;
 /
@@ -113,6 +113,88 @@ ALTER TABLE Vydani ADD CONSTRAINT FK_Vydani_Lek_Nazev FOREIGN KEY (Lek_Nazev) RE
 ALTER TABLE Vykaz ADD CONSTRAINT PK_Vykaz PRIMARY KEY (ID);
 ALTER TABLE Vykaz ADD CONSTRAINT FK_Vykaz_Pojistovna_ICO FOREIGN KEY (Pojistovna_ICO) REFERENCES Pojistovna;
 ALTER TABLE Vykaz ADD CONSTRAINT FK_Vykaz_LekNaPredpis_Nazev FOREIGN KEY (LekNaPredpis_Nazev) REFERENCES LekNaPredpis;
-ALTER TABLE Vykaz ADD CONSTRAINT FK_Vykaz_Prispevek_ID FOREIGN KEY (Prispevek_ID) REFERENCES Prispevek; 
+ALTER TABLE Vykaz ADD CONSTRAINT FK_Vykaz_Prispevek_ID FOREIGN KEY (Prispevek_ID) REFERENCES Prispevek;
+
+INSERT INTO Lek (Nazev, dostupnost, nutnostPredpisu, cenaLeku, mnozstvi)
+VALUES('Ibuprofen', 1, 0, 199, 27);
+INSERT INTO Lek (Nazev, dostupnost, nutnostPredpisu, cenaLeku, mnozstvi)
+VALUES('Multivitamin', 0, 0, 599, 0);
+INSERT INTO Lek (Nazev, dostupnost, nutnostPredpisu, cenaLeku, mnozstvi)
+VALUES('Antibiotikum', 1, 1, 249, 1002);
+INSERT INTO Lek (Nazev, dostupnost, nutnostPredpisu, cenaLeku, mnozstvi)
+VALUES('AntibiotikumNova', 1, 1, 1049, 2);
+INSERT INTO Lek (Nazev, dostupnost, nutnostPredpisu, cenaLeku, mnozstvi)
+VALUES('Trittico', 0, 1, 149, 0);
+
+INSERT INTO LekNaPredpis (Lek_Nazev, doporuceni)
+VALUES('Antibiotikum', '1x denne');
+INSERT INTO LekNaPredpis (Lek_Nazev, doporuceni)
+VALUES('AntibiotikumNova', 'nepouzivat pri nachlazeni');
+INSERT INTO LekNaPredpis (Lek_Nazev, doporuceni)
+VALUES('Trittico', '1x vecer');
+
+INSERT INTO Pojistovna (ICO, nazevPojistovny, ulice, mesto, PSC)
+VALUES(12345678, 'VZP', 'Nadrazni', 'Prague', 15000);
+INSERT INTO Pojistovna (ICO, nazevPojistovny, ulice, mesto, PSC)
+VALUES(82345671, 'pVZP', 'Kolejni', 'Brno', 61200);
+
+INSERT INTO Prispevek (Pojistovna_ICO, LekNaPredpis_Nazev, castka)
+VALUES(12345678, 'Antibiotikum', 50);
+INSERT INTO Prispevek (Pojistovna_ICO, LekNaPredpis_Nazev, castka)
+VALUES(82345671, 'Antibiotikum', 55);
+INSERT INTO Prispevek (Pojistovna_ICO, LekNaPredpis_Nazev, castka)
+VALUES(12345678, 'AntibiotikumNova', 100);
+INSERT INTO Prispevek (Pojistovna_ICO, LekNaPredpis_Nazev, castka)
+VALUES(82345671, 'AntibiotikumNova', 99);
+
+INSERT INTO Vydani (Lek_Nazev, mnozstviProdane)
+VALUES('Ibuprofen', 2);
+INSERT INTO Vydani (Lek_Nazev, mnozstviProdane)
+VALUES('Ibuprofen', 3);
+
+INSERT INTO Vykaz (Pojistovna_ICO, LekNaPredpis_Nazev, Prispevek_ID, jmenoZakaznika)
+VALUES (12345678, 'Antibiotikum', 1, 'Honza');
+INSERT INTO Vykaz (Pojistovna_ICO, LekNaPredpis_Nazev, Prispevek_ID, jmenoZakaznika)
+VALUES (12345678, 'AntibiotikumNova', 1, 'Hana');
 
 COMMIT;
+
+SELECT *
+FROM Prispevek
+JOIN Pojistovna ON Prispevek.Pojistovna_ICO = Pojistovna.ICO;
+
+SELECT *
+FROM Vykaz
+JOIN LekNaPredpis ON Vykaz.LekNaPredpis_Nazev = LekNaPredpis.Lek_Nazev;
+
+SELECT vk.jmenoZakaznika, pr.castka, lnp.doporuceni
+FROM Vykaz vk
+JOIN Prispevek pr ON vk.Prispevek_ID = pr.ID
+JOIN LekNaPredpis lnp ON vk.LekNaPredpis_Nazev = lnp.Lek_Nazev;
+
+SELECT l.Nazev, SUM(vd.mnozstviProdane) AS TotalSell
+FROM Lek l
+JOIN Vydani vd ON l.Nazev = vd.Lek_Nazev
+GROUP BY l.Nazev;
+
+SELECT ps.nazevPojistovny, lnp.Lek_Nazev, SUM(pr.castka) AS TotalForMed
+FROM Pojistovna ps
+JOIN Prispevek pr ON ps.ICO = pr.Pojistovna_ICO
+JOIN LekNaPredpis lnp ON pr.LekNaPredpis_Nazev = lnp.Lek_Nazev
+GROUP BY ps.nazevPojistovny, lnp.Lek_Nazev;
+
+SELECT lnp.Lek_Nazev as LekySPrispevkem
+FROM LekNaPredpis lnp
+WHERE EXISTS (
+  SELECT *
+  FROM Prispevek pr
+  WHERE pr.LekNaPredpis_Nazev = lnp.Lek_Nazev
+);
+
+SELECT SUM(pr.castka) as TotalMoneyInBrno
+FROM Prispevek pr
+WHERE pr.Pojistovna_ICO IN (
+  SELECT ps.ICO
+  FROM Pojistovna ps
+  WHERE mesto = 'Brno'
+);
